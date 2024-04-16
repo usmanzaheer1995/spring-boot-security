@@ -1,28 +1,61 @@
 package org.usmanzaheer1995.springbootdemo.controllers
 
+import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
-import org.springframework.security.core.context.SecurityContextHolder
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
-import org.usmanzaheer1995.springbootdemo.models.User
+import org.springframework.web.server.ResponseStatusException
+import org.usmanzaheer1995.springbootdemo.models.dtos.UserDto
+import org.usmanzaheer1995.springbootdemo.models.responses.UserResponse
 import org.usmanzaheer1995.springbootdemo.services.UserService
+import java.util.UUID
 
 @RestController
-@RequestMapping("/users")
+@RequestMapping("/api/users")
 class UserController(
     private val userService: UserService,
 ) {
-    @GetMapping("/me")
-    fun authenticatedUser(): ResponseEntity<User> {
-        val authentication = SecurityContextHolder.getContext().authentication
-        val user = authentication.principal as User
-        return ResponseEntity.ok(user)
+    @PostMapping
+    fun create(
+        @RequestBody user: UserDto,
+    ): UserResponse? {
+        val createdUser = userService.createUser(user.toModel())
+
+        return createdUser
+            ?.toResponse()
+            ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot create a user")
     }
 
-    @GetMapping("/")
-    fun allUsers(): ResponseEntity<List<User>> {
-        val users = userService.getAllUsers()
-        return ResponseEntity.ok(users)
+    @GetMapping
+    fun listAll(): List<UserResponse> {
+        return userService.findAll().map { it.toResponse() }
+    }
+
+    @GetMapping("/{uuid}")
+    fun getUser(
+        @PathVariable uuid: UUID,
+    ): UserResponse {
+        return userService
+            .findByUUID(uuid)
+            ?.toResponse()
+            ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "User not found")
+    }
+
+    @DeleteMapping("/{uuid}")
+    fun deleteUser(
+        @PathVariable uuid: UUID,
+    ): ResponseEntity<Boolean> {
+        val success = userService.deleteUser(uuid)
+
+        return if (success) {
+            ResponseEntity.noContent().build()
+        } else {
+            throw ResponseStatusException(HttpStatus.NOT_FOUND, "User not found")
+        }
     }
 }
