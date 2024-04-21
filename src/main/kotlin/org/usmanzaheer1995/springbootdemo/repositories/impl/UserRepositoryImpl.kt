@@ -1,5 +1,6 @@
 package org.usmanzaheer1995.springbootdemo.repositories.impl
 
+import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Repository
 import org.usmanzaheer1995.springbootdemo.models.User
 import org.usmanzaheer1995.springbootdemo.models.UserRole
@@ -7,21 +8,23 @@ import org.usmanzaheer1995.springbootdemo.repositories.UserRepository
 import java.util.UUID
 
 @Repository
-class UserRepositoryImpl : UserRepository {
+class UserRepositoryImpl(
+    private val encoder: PasswordEncoder,
+) : UserRepository {
     private val users =
         mutableListOf(
             User(
                 id = UUID.randomUUID(),
                 email = "john@doe.com",
                 username = "john.doe",
-                password = "password",
+                password = encoder.encode("password"),
                 role = UserRole.USER,
             ),
             User(
                 id = UUID.randomUUID(),
                 email = "jane@doe.com",
                 username = "jane.doe",
-                password = "password",
+                password = encoder.encode("password"),
                 role = UserRole.ADMIN,
             ),
         )
@@ -30,7 +33,10 @@ class UserRepositoryImpl : UserRepository {
         return users.firstOrNull { it.email == email }
     }
 
-    override fun save(user: User): Boolean = users.add(user)
+    override fun save(user: User): Boolean {
+        val updatedUser = user.copy(password = encoder.encode(user.password))
+        return users.add(updatedUser)
+    }
 
     override fun findAll(): List<User> {
         return users

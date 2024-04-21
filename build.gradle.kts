@@ -6,7 +6,7 @@ import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.utility.DockerImageName
 import java.util.Properties
 
-val packageName = "org.usmanzaheer1995.springbootdemo"
+val packageName = "org.usmanzaheer1995.springbootsecurity"
 
 val env = System.getenv("DEMO_ENV") ?: "local"
 val propertiesFileName = "application-$env.properties"
@@ -47,11 +47,11 @@ repositories {
 }
 
 dependencies {
-    implementation("org.springframework.boot:spring-boot-starter-jdbc:3.2.2") {
+    implementation("org.springframework.boot:spring-boot-starter-jdbc:3.2.4") {
         exclude(group = "org.springframework", module = "spring-core")
     }
     implementation("org.springframework:spring-core:6.1.3")
-    implementation("org.springframework.boot:spring-boot-starter-web:3.1.0")
+    implementation("org.springframework.boot:spring-boot-starter-web:3.2.4")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.14.2")
     implementation("org.jetbrains.kotlin:kotlin-reflect:1.8.10")
     implementation("org.springdoc:springdoc-openapi-starter-common:2.3.0")
@@ -61,11 +61,18 @@ dependencies {
     implementation("org.jooq:jooq:3.19.3")
     implementation("org.flywaydb:flyway-core:10.6.0")
     implementation("org.flywaydb:flyway-database-postgresql:10.6.0")
+
+    implementation("io.jsonwebtoken:jjwt-api:0.12.5")
+    implementation("io.jsonwebtoken:jjwt-impl:0.12.5")
+    implementation("io.jsonwebtoken:jjwt-jackson:0.12.5")
+    implementation("org.springframework.boot:spring-boot-starter-security:3.2.4")
+    testImplementation("org.springframework.security:spring-security-test:6.2.4")
+
     jooqGenerator("org.postgresql:postgresql:42.5.5")
     runtimeOnly("org.postgresql:postgresql:42.5.5")
     developmentOnly("org.springframework.boot:spring-boot-devtools:3.2.2")
     developmentOnly("org.springframework.boot:spring-boot-docker-compose:3.2.2")
-    testImplementation("org.springframework.boot:spring-boot-starter-test:3.2.2") {
+    testImplementation("org.springframework.boot:spring-boot-starter-test:3.2.4") {
         exclude(group = "com.jayway.jsonpath", module = "json-path")
     }
     testImplementation("com.jayway.jsonpath:json-path:2.9.0")
@@ -94,18 +101,19 @@ val flywayDbUrl = properties.getProperty("spring.flyway.url")
 val flywayDbUser = properties.getProperty("spring.flyway.user")
 val flywayDbPassword = properties.getProperty("spring.flyway.password")
 
-val containerInstance: PostgreSQLContainer<Nothing>? = if ("generateJooq" in project.gradle.startParameter.taskNames) {
-    PostgreSQLContainer<Nothing>(
-        DockerImageName.parse(
-            "postgres:16-alpine",
-        ),
-    ).apply {
-        withDatabaseName("mydatabase")
-        start()
+val containerInstance: PostgreSQLContainer<Nothing>? =
+    if ("generateJooq" in project.gradle.startParameter.taskNames) {
+        PostgreSQLContainer<Nothing>(
+            DockerImageName.parse(
+                "postgres:16-alpine",
+            ),
+        ).apply {
+            withDatabaseName("mydatabase")
+            start()
+        }
+    } else {
+        null
     }
-} else {
-    null
-}
 
 flyway {
     url = containerInstance?.jdbcUrl ?: flywayDbUrl
@@ -126,10 +134,12 @@ jooq {
                     url = containerInstance?.jdbcUrl
                     user = containerInstance?.username
                     password = containerInstance?.password
-                    properties.add(Property().apply {
-                        key = "ssl"
-                        value = "false"
-                    })
+                    properties.add(
+                        Property().apply {
+                            key = "ssl"
+                            value = "false"
+                        },
+                    )
                 }
                 generator.apply {
                     name = "org.jooq.codegen.KotlinGenerator"
@@ -157,13 +167,15 @@ jooq {
 }
 
 tasks.named<JooqGenerate>("generateJooq") {
-    (launcher::set)(javaToolchains.launcherFor {
-        dependsOn(tasks.named("flywayMigrate"))
-        languageVersion.set(JavaLanguageVersion.of(21))
-        doLast {
-            containerInstance?.stop()
-        }
-    })
+    (launcher::set)(
+        javaToolchains.launcherFor {
+            dependsOn(tasks.named("flywayMigrate"))
+            languageVersion.set(JavaLanguageVersion.of(21))
+            doLast {
+                containerInstance?.stop()
+            }
+        },
+    )
 }
 
 val oasPackage = "$packageName.openapi"
@@ -176,15 +188,16 @@ openApiGenerate {
     outputDir = project.file(oasGenOutputDir).path
     apiPackage = "$oasPackage.api"
     modelPackage = "$oasPackage.model"
-    configOptions = mapOf(
-        "dateLibrary" to "java21",
-        "interfaceOnly" to "true",
-        "useTags" to "true"
-    )
+    configOptions =
+        mapOf(
+            "dateLibrary" to "java21",
+            "interfaceOnly" to "true",
+            "useTags" to "true",
+        )
 }
 
 tasks.bootJar {
-    archiveFileName.set("spring-boot-demo-$env.jar")
+    archiveFileName.set("spring-boot-security-$env.jar")
     enabled = true
 }
 
