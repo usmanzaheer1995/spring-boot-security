@@ -7,7 +7,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException
 import org.springframework.stereotype.Service
 import org.usmanzaheer1995.springbootdemo.repositories.UserRepository
 
-typealias ApplicationUser = org.usmanzaheer1995.springbootdemo.models.User
+import org.usmanzaheer1995.springbootdemo.models.User as ApplicationUser
 
 @Service
 class CustomUserDetailsService(

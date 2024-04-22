@@ -10,7 +10,7 @@ import java.util.Date
 
 @Service
 class TokenService(
-    private val jwtProperties: JwtProperties,
+    jwtProperties: JwtProperties,
 ) {
     private val secretKey =
         Keys.hmacShaKeyFor(
@@ -20,7 +20,7 @@ class TokenService(
     fun generate(
         userDetails: UserDetails,
         expirationDate: Date,
-        additionalClaims: Map<String, Any>,
+        additionalClaims: Map<String, Any> = emptyMap(),
     ): String {
         return Jwts
             .builder()

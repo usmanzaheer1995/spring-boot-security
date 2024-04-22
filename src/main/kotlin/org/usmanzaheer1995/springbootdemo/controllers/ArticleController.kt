@@ -12,7 +12,7 @@ import org.usmanzaheer1995.springbootdemo.services.ArticleService
 class ArticleController(
     private val articleService: ArticleService,
 ) {
-    @GetMapping("/")
+    @GetMapping
     fun allArticles(): ResponseEntity<List<ArticleResponse>> {
         val articles =
             articleService.findAll()

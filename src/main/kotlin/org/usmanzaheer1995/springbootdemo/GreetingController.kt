@@ -4,7 +4,7 @@ import org.jooq.DSLContext
 import org.jooq.generated.persistence.db.tables.references.USERS
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.RestController
-import org.usmanzaheer1995.springbootdemo.openapi.api.GreetingApi
+import org.usmanzaheer1995.springbootsecurity.openapi.api.GreetingApi
 
 @RestController
 class GreetingController(
