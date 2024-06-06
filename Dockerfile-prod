@@ -16,7 +16,7 @@ RUN ./gradlew build -x test --no-daemon
 RUN mkdir -p /app/unpacked
 
 # Unpack the JAR file
-RUN cd /app/unpacked && unzip ../build/libs/spring-boot-demo-prod.jar
+RUN cd /app/unpacked && unzip ../build/libs/spring-boot-security-prod.jar
 
 # Run jdeps to analyze dependencies and save the results
 RUN jdeps \
@@ -27,7 +27,7 @@ RUN jdeps \
     --multi-release 21 \
     --class-path="/app/unpacked/BOOT-INF/lib/*" \
     --module-path="/app/unpacked/BOOT-INF/lib/*" \
-    /app/build/libs/spring-boot-demo-prod.jar > /app/deps.info
+    /app/build/libs/spring-boot-security-prod.jar > /app/deps.info
 
 # Run jlink to create a custom runtime image
 RUN jlink \
@@ -48,10 +48,10 @@ COPY --from=builder /javaruntime $JAVA_HOME
 
 WORKDIR /app
 
-COPY --from=builder /app/build/libs/spring-boot-demo-prod.jar /app/spring-boot-demo-prod.jar
+COPY --from=builder /app/build/libs/spring-boot-security-prod.jar /app/spring-boot-security-prod.jar
 
 # Expose the port
 EXPOSE 4002
 
 # Run the application
-CMD ["java", "-Dspring.profiles.active=prod", "-jar", "spring-boot-demo-prod.jar"]
+CMD ["java", "-Dspring.profiles.active=prod", "-jar", "spring-boot-security-prod.jar"]

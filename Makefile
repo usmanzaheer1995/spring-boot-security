@@ -11,12 +11,12 @@ confirm:
 ## start/db: start local database
 .PHONY: start/db
 start/db:
-	@docker-compose up -d
+	@docker compose up -d
 
 ## stop/db: stop local database
 .PHONY: stop/db
 stop/db:
-	@docker-compose down
+	@docker compose down
 
 ## generate/jooq: generate jooq classes
 .PHONY: generate/jooq
@@ -62,12 +62,12 @@ build/prod: |
 ## build/image/local: build docker image for local environment
 .PHONE: build/image/local
 build/image/local: build/local
-	@docker build --no-cache -t spring-boot-demo-local -f Dockerfile-local .
+	@docker build --no-cache -t spring-boot-security-local -f Dockerfile-local .
 
 ## build/image/prod: build docker image for local environment
 .PHONE: build/image/prod
 build/image/prod: build/prod
-	@docker build --no-cache -t spring-boot-demo-prod -f Dockerfile-prod .
+	@docker build --no-cache -t spring-boot-security-prod -f Dockerfile-prod .
 
 
 CONTAINER_NAME = sp-demo-prod
@@ -79,7 +79,7 @@ run/image/prod:
 		docker stop $(CONTAINER_NAME); \
 		docker rm $(CONTAINER_NAME); \
 	fi
-	docker run --network=postgres-bridge --restart=unless-stopped --name=$(CONTAINER_NAME) -p 4002:4002 spring-boot-demo-prod
+	docker run --network=postgres-bridge --restart=unless-stopped --name=$(CONTAINER_NAME) -p 4002:4002 spring-boot-security-prod
 
 
 

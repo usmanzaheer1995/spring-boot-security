@@ -16,10 +16,10 @@ FROM amazoncorretto:21-alpine-jdk
 
 WORKDIR /app
 
-COPY --from=builder /app/build/libs/spring-boot-demo-local.jar /app/spring-boot-demo-local.jar
+COPY --from=builder /app/build/libs/spring-boot-security-local.jar /app/spring-boot-security-local.jar
 
 # Expose the port
 EXPOSE 4001
 
 # Run the application
-CMD ["java", "-Dspring.profiles.active=local", "-jar", "spring-boot-demo-local.jar"]
+CMD ["java", "-Dspring.profiles.active=local", "-jar", "spring-boot-security-local.jar"]

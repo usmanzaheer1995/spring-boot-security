@@ -1,4 +1,5 @@
 import nu.studer.gradle.jooq.JooqGenerate
+import org.jetbrains.kotlin.cli.jvm.main
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.jooq.meta.jaxb.Logging
 import org.jooq.meta.jaxb.Property
@@ -33,6 +34,10 @@ java {
     sourceCompatibility = JavaVersion.VERSION_21
 }
 
+graalvmNative {
+    testSupport = false
+}
+
 buildscript {
     dependencies {
         classpath("org.springdoc:springdoc-openapi-starter-common:2.3.0")
@@ -52,6 +57,15 @@ dependencies {
     }
     implementation("org.springframework:spring-core:6.1.3")
     implementation("org.springframework.boot:spring-boot-starter-web:3.2.4")
+    implementation("org.springframework.boot:spring-boot-starter-security:3.2.4")
+    developmentOnly("org.springframework.boot:spring-boot-devtools:3.2.2")
+    developmentOnly("org.springframework.boot:spring-boot-docker-compose:3.2.2")
+    testImplementation("org.springframework.security:spring-security-test:6.2.4")
+    testImplementation("org.springframework.boot:spring-boot-testcontainers:3.2.2")
+    testImplementation("org.springframework.boot:spring-boot-starter-test:3.2.4") {
+        exclude(group = "com.jayway.jsonpath", module = "json-path")
+    }
+
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.14.2")
     implementation("org.jetbrains.kotlin:kotlin-reflect:1.8.10")
     implementation("org.springdoc:springdoc-openapi-starter-common:2.3.0")
@@ -65,18 +79,11 @@ dependencies {
     implementation("io.jsonwebtoken:jjwt-api:0.12.5")
     implementation("io.jsonwebtoken:jjwt-impl:0.12.5")
     implementation("io.jsonwebtoken:jjwt-jackson:0.12.5")
-    implementation("org.springframework.boot:spring-boot-starter-security:3.2.4")
-    testImplementation("org.springframework.security:spring-security-test:6.2.4")
 
     jooqGenerator("org.postgresql:postgresql:42.5.5")
     runtimeOnly("org.postgresql:postgresql:42.5.5")
-    developmentOnly("org.springframework.boot:spring-boot-devtools:3.2.2")
-    developmentOnly("org.springframework.boot:spring-boot-docker-compose:3.2.2")
-    testImplementation("org.springframework.boot:spring-boot-starter-test:3.2.4") {
-        exclude(group = "com.jayway.jsonpath", module = "json-path")
-    }
+
     testImplementation("com.jayway.jsonpath:json-path:2.9.0")
-    testImplementation("org.springframework.boot:spring-boot-testcontainers:3.2.2")
     testImplementation("org.testcontainers:junit-jupiter:1.19.4")
     testImplementation("org.testcontainers:postgresql:1.19.3")
     testImplementation("io.mockk:mockk:1.13.9")
@@ -93,13 +100,13 @@ tasks.withType<Test> {
     useJUnitPlatform()
 }
 
-val dbUrl = properties.getProperty("spring.datasource.url")
-val dbUser = properties.getProperty("spring.datasource.username")
-val dbPassword = properties.getProperty("spring.datasource.password")
+val dbUrl: String = properties.getProperty("spring.datasource.url")
+val dbUser: String = properties.getProperty("spring.datasource.username")
+val dbPassword: String = properties.getProperty("spring.datasource.password")
 
-val flywayDbUrl = properties.getProperty("spring.flyway.url")
-val flywayDbUser = properties.getProperty("spring.flyway.user")
-val flywayDbPassword = properties.getProperty("spring.flyway.password")
+val flywayDbUrl: String = properties.getProperty("spring.flyway.url")
+val flywayDbUser: String = properties.getProperty("spring.flyway.user")
+val flywayDbPassword: String = properties.getProperty("spring.flyway.password")
 
 val containerInstance: PostgreSQLContainer<Nothing>? =
     if ("generateJooq" in project.gradle.startParameter.taskNames) {
