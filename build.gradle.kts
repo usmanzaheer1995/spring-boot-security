@@ -1,5 +1,4 @@
 import nu.studer.gradle.jooq.JooqGenerate
-import org.jetbrains.kotlin.cli.jvm.main
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.jooq.meta.jaxb.Logging
 import org.jooq.meta.jaxb.Property
