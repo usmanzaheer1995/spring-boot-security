@@ -63,7 +63,9 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-testcontainers:3.2.2")
     testImplementation("org.springframework.boot:spring-boot-starter-test:3.2.4") {
         exclude(group = "com.jayway.jsonpath", module = "json-path")
+        exclude(module = "mockito-core")
     }
+    testImplementation("com.ninja-squad:springmockk:4.0.2")
 
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.14.2")
     implementation("org.jetbrains.kotlin:kotlin-reflect:1.8.10")
