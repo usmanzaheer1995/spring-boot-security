@@ -1,57 +1,75 @@
-FROM eclipse-temurin:21-jdk AS builder
+# Stage 1: Builder
+FROM eclipse-temurin:21-jdk-alpine AS builder
 
-RUN apt-get update && apt-get install -y make binutils unzip
-
-# Set working directory
 WORKDIR /app
 
-# Copy built JAR from the builder stage
-COPY . .
+# Install minimal build requirements
+RUN apk add --no-cache \
+    curl \
+    postgresql-client \
+    docker \
+    docker-compose
 
 ENV DEMO_ENV=prod
+ENV SPRING_PROFILES_ACTIVE=prod
 
-RUN ./gradlew build -x test --no-daemon
+COPY . .
+RUN chmod +x ./gradlew && \
+    ./gradlew build -x test --no-daemon
 
-# Create a directory for unpacking the JAR
-RUN mkdir -p /app/unpacked
+# Stage 2: JLink custom JRE creation
+FROM eclipse-temurin:21-jdk-alpine AS jre-builder
+WORKDIR /app
+COPY --from=builder /app/build/libs/spring-boot-security-prod.jar ./
+RUN mkdir -p /app/unpacked && \
+    cd /app/unpacked && \
+    unzip ../spring-boot-security-prod.jar && \
+    jdeps \
+        --ignore-missing-deps \
+        --print-module-deps \
+        -q \
+        --recursive \
+        --multi-release 21 \
+        --class-path="/app/unpacked/BOOT-INF/lib/*" \
+        --module-path="/app/unpacked/BOOT-INF/lib/*" \
+        /app/spring-boot-security-prod.jar > /app/deps.info && \
+    jlink \
+        --no-man-pages \
+        --no-header-files \
+        --compress=2 \
+        --strip-debug \
+        --add-modules $(cat /app/deps.info) \
+        --output /javaruntime
 
-# Unpack the JAR file
-RUN cd /app/unpacked && unzip ../build/libs/spring-boot-security-prod.jar
-
-# Run jdeps to analyze dependencies and save the results
-RUN jdeps \
-    --ignore-missing-deps \
-    --print-module-deps \
-    -q \
-    --recursive \
-    --multi-release 21 \
-    --class-path="/app/unpacked/BOOT-INF/lib/*" \
-    --module-path="/app/unpacked/BOOT-INF/lib/*" \
-    /app/build/libs/spring-boot-security-prod.jar > /app/deps.info
-
-# Run jlink to create a custom runtime image
-RUN jlink \
-    --verbose \
-    --compress 2 \
-    --strip-java-debug-attributes \
-    --no-header-files \
-    --no-man-pages \
-    --output /javaruntime \
-    --add-modules $(cat /app/deps.info)
-
-FROM debian:buster-slim
+# Stage 3: Final minimal runtime image
+FROM alpine:3.19.1
 
 ENV JAVA_HOME=/jre
 ENV PATH="${JAVA_HOME}/bin:${PATH}"
-
-COPY --from=builder /javaruntime $JAVA_HOME
+ENV SPRING_PROFILES_ACTIVE=prod
+ENV DEMO_ENV=prod
 
 WORKDIR /app
 
-COPY --from=builder /app/build/libs/spring-boot-security-prod.jar /app/spring-boot-security-prod.jar
+# Copy only necessary runtime files
+COPY --from=jre-builder /javaruntime $JAVA_HOME
+COPY --from=builder /app/build/libs/spring-boot-security-prod.jar app.jar
 
-# Expose the port
+# Create a non-root user
+RUN addgroup -S spring && \
+    adduser -S spring -G spring && \
+    chown -R spring:spring /app
+
+USER spring
+
 EXPOSE 4002
 
-# Run the application
-CMD ["java", "-Dspring.profiles.active=prod", "-jar", "spring-boot-security-prod.jar"]
+# Optimized JVM settings
+ENV JAVA_OPTS="-XX:+UseContainerSupport \
+    -XX:MaxRAMPercentage=75 \
+    -Xms128m \
+    -Xmx256m \
+    -XX:+UseSerialGC \
+    -Djava.security.egd=file:/dev/./urandom"
+
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
